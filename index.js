@@ -1,17 +1,18 @@
 module.exports = function geneticAlgorithmConstructor(options) {
 
     function settingDefaults() { return {
- 
+
         mutationFunction : function(phenotype) { return phenotype },
- 
+
         crossoverFunction : function(a,b) { return [a,b] },
- 
+
         fitnessFunction : function(phenotype) { return 0 },
 
         doesABeatBFunction : undefined,
- 
+
         population : [],
         populationSize : 100,
+        elitism : 0.0,
     }}
 
     function settingWithDefaults( settings , defaults ) {
@@ -69,34 +70,69 @@ module.exports = function geneticAlgorithmConstructor(options) {
         }
     }
 
-    function compete( ) {
-        var nextGeneration = []
+    function orderPopulation(){
+        quick_sort(settings.population)
+    }
 
-        for( var p = 0 ; p < settings.population.length - 1 ; p+=2 ) {
-            var phenotype = settings.population[p];
-            var competitor = settings.population[p+1];
+    function quick_sort(origArray) {
+        if (origArray.length <= 1) {
+            return origArray;
+        } else {
 
-            nextGeneration.push(phenotype)
-            if ( doesABeatB( phenotype , competitor )) {
-                if ( Math.random() < 0.5 ) {
-                    nextGeneration.push(mutate(phenotype))
+            var left = [];
+            var right = [];
+            var newArray = [];
+            var pivot = origArray.pop();
+            var length = origArray.length;
+
+            for (var i = 0; i < length; i++) {
+                if (doesABeatB(origArray[i], pivot)) {
+                    left.push(origArray[i]);
                 } else {
-                    nextGeneration.push(crossover(phenotype))
+                    right.push(origArray[i]);
                 }
+            }
+
+            return newArray.concat(quick_Sort(left), pivot, quick_Sort(right));
+        }
+    }
+
+    function compete( ) {
+        var nextGeneration = [];
+
+        var elite = round(populationSize * elitism);
+        if(elite > 0) {
+            var populationMix = [];
+            orderPopulation();
+
+            for( var p = 0 ; p < elite ; p+=1 ) {
+                populationMix.push(settings.population[p]);
+            }
+
+            for( var p = 0 ; p < settings.population.length - elite ; p+=1 ) {
+                populationMix.push(settings.population[p]);
+            }
+            settings.population = populationMix;
+        }
+
+        randomizePopulationOrder(elite);
+
+        for( var p = elite ; p < settings.population.length ; p+=1 ) {
+            var phenotype = settings.population[p];
+
+            if ( Math.random() < 0.5 ) {
+                nextGeneration.push(mutate(phenotype))
             } else {
-                nextGeneration.push(competitor)
+                nextGeneration.push(crossover(phenotype))
             }
         }
 
         settings.population = nextGeneration;
     }
 
-
-
-    function randomizePopulationOrder( ) {
-
-        for( var index = 0 ; index < settings.population.length ; index++ ) {
-            var otherIndex = Math.floor( Math.random() * settings.population.length )
+    function randomizePopulationOrder(elite) {
+        for( var index = elite ; index < settings.population.length ; index++ ) {
+            var otherIndex = elite + Math.floor( Math.random() * (settings.population.length - elite) )
             var temp = settings.population[otherIndex]
             settings.population[otherIndex] = settings.population[index]
             settings.population[index] = temp
@@ -105,13 +141,11 @@ module.exports = function geneticAlgorithmConstructor(options) {
 
     return {
         evolve : function (options) {
-
-            if ( options ) { 
+            if ( options ) {
                 settings = settingWithDefaults(options,settings)
             }
-            
+
             populate()
-            randomizePopulationOrder()
             compete()
             return this
         },
@@ -140,11 +174,11 @@ module.exports = function geneticAlgorithmConstructor(options) {
             return cloneJSON( settings )
         },
         clone : function(options) {
-            return geneticAlgorithmConstructor( 
-                settingWithDefaults(options, 
-                    settingWithDefaults( this.config(), settings ) 
-                    )
+            return geneticAlgorithmConstructor(
+                settingWithDefaults(options,
+                    settingWithDefaults( this.config(), settings )
                 )
+            )
         }
     }
 }
