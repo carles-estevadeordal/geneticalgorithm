@@ -100,7 +100,7 @@ module.exports = function geneticAlgorithmConstructor(options) {
     function compete( ) {
         var nextGeneration = [];
 
-        var elite = round(populationSize * elitism);
+        var elite = Math.round(populationSize * elitism);
         if(elite > 0) {
             var populationMix = [];
             orderPopulation();
@@ -121,9 +121,9 @@ module.exports = function geneticAlgorithmConstructor(options) {
             var phenotype = settings.population[p];
 
             if ( Math.random() < 0.5 ) {
-                nextGeneration.push(mutate(phenotype))
+                nextGeneration.push(mutate(phenotype));
             } else {
-                nextGeneration.push(crossover(phenotype))
+                nextGeneration.push(crossover(phenotype));
             }
         }
 
